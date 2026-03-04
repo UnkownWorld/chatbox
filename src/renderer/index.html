@@ -258,6 +258,55 @@
       </div>
       <div class="splash-screen-bottom" id="log-root"></div>
     </div>
+    
+    <!-- 强制隐藏启动画面 - 不依赖任何其他 JS -->
+    <script>
+      (function() {
+        // 3秒后强制隐藏启动画面
+        var forceHideTimeout = setTimeout(function() {
+          console.log('[Chatbox] Force hiding splash screen after 3s');
+          var splashEl = document.querySelector('.splash-screen');
+          if (splashEl) {
+            splashEl.style.opacity = '0';
+            splashEl.style.transition = 'opacity 0.3s';
+            setTimeout(function() {
+              if (splashEl.parentNode) splashEl.parentNode.removeChild(splashEl);
+            }, 300);
+          }
+          if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.SplashScreen) {
+            window.Capacitor.Plugins.SplashScreen.hide().catch(function() {});
+          }
+        }, 3000);
+
+        window.addEventListener('load', function() {
+          console.log('[Chatbox] Window loaded');
+          setTimeout(function() {
+            clearTimeout(forceHideTimeout);
+            if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.SplashScreen) {
+              console.log('[Chatbox] Hiding Capacitor splash screen');
+              window.Capacitor.Plugins.SplashScreen.hide().catch(function() {});
+            }
+            var splashEl = document.querySelector('.splash-screen');
+            if (splashEl) {
+              splashEl.addEventListener('animationend', function() {
+                if (splashEl.parentNode) splashEl.parentNode.removeChild(splashEl);
+              });
+              splashEl.classList.add('splash-screen-fade-out');
+            }
+          }, 500);
+        });
+
+        window.addEventListener('error', function(e) {
+          console.error('[Chatbox] Global error:', e.message);
+          clearTimeout(forceHideTimeout);
+          var splashEl = document.querySelector('.splash-screen');
+          if (splashEl && splashEl.parentNode) splashEl.parentNode.removeChild(splashEl);
+          if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.SplashScreen) {
+            window.Capacitor.Plugins.SplashScreen.hide().catch(function() {});
+          }
+        });
+      })();
+    </script>
     <script type="module" src="./index.tsx"></script>
   </body>
 </html>
