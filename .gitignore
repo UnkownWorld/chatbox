@@ -178,3 +178,8 @@ electron-builder.env
 
 .env.sentry-build-plugin
 .sisyphus/
+# Capacitor
+android/
+ios/
+capacitor.config.ts
+capacitor.config.json
