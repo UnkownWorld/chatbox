@@ -52,7 +52,14 @@ let initLastUsedModelStorePromise: Promise<State> | undefined
 export const initLastUsedModelStore = async () => {
   if (!initLastUsedModelStorePromise) {
     initLastUsedModelStorePromise = new Promise<State>((resolve) => {
+      // 添加超时保护
+      const timeout = setTimeout(() => {
+        console.warn('[lastUsedModelStore] init timeout, resolving with current state')
+        resolve(lastUsedModelStore.getState() as State)
+      }, 5000) // 5秒超时
+
       const unsub = lastUsedModelStore.persist.onFinishHydration((val) => {
+        clearTimeout(timeout)
         unsub()
         resolve(val)
       })

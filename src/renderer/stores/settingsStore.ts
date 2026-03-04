@@ -112,7 +112,14 @@ let _initSettingsStorePromise: Promise<Settings> | undefined
 export const initSettingsStore = async () => {
   if (!_initSettingsStorePromise) {
     _initSettingsStorePromise = new Promise<Settings>((resolve) => {
+      // 添加超时保护，防止 hydration 永远不完成
+      const timeout = setTimeout(() => {
+        log.warn('[CONFIG_DEBUG] initSettingsStore timeout, resolving with default settings')
+        resolve(settingsStore.getState() as Settings)
+      }, 10000) // 10秒超时
+
       const unsub = settingsStore.persist.onFinishHydration((val) => {
+        clearTimeout(timeout)
         const providers = val?.providers
         const providersCount =
           providers && typeof providers === 'object' && !Array.isArray(providers) ? Object.keys(providers).length : 0
