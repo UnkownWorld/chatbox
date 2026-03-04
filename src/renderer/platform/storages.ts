@@ -96,17 +96,25 @@ class SQLiteStorage {
   private sqlite: SQLiteConnection
   private database!: SQLiteDBConnection
   private initializePromise: Promise<void>
+  private initError: Error | null = null
 
   constructor() {
     this.sqlite = new SQLiteConnection(CapacitorSQLite)
-    this.initializePromise = this.initialize() // 初始化 Promise
+    this.initializePromise = this.initialize().catch((error) => {
+      console.error('SQLite initialization failed, will use fallback:', error)
+      this.initError = error
+    })
   }
 
   // 创建并打开数据库
   private async initialize(): Promise<void> {
     try {
       // reload的时候会报connection already open错误，所以先关闭
-      this.sqlite.closeConnection('chatbox.db', false)
+      try {
+        await this.sqlite.closeConnection('chatbox.db', false)
+      } catch (e) {
+        // 忽略关闭错误
+      }
       this.database = await this.sqlite.createConnection('chatbox.db', false, 'no-encryption', 1, false)
 
       // 创建表
@@ -125,8 +133,9 @@ class SQLiteStorage {
   }
 
   // 确保数据库初始化完成
-  private async ensureInitialized(): Promise<void> {
+  private async ensureInitialized(): Promise<boolean> {
     await this.initializePromise
+    return this.initError === null
   }
 
   // 插入或更新数据
@@ -332,7 +341,8 @@ export function getOldVersionStorages(): Storage[] {
   if (platform.type === 'desktop') {
     return [new DesktopFileStorage()]
   } else if (platform.type === 'mobile') {
-    return [new IndexedDBStorage(), new MobileSQLiteStorage(), new LocalStorage()]
+    // 移动端只使用 IndexedDB 和 LocalStorage，避免 SQLite 初始化问题
+    return [new IndexedDBStorage(), new LocalStorage()]
   }
   return [new LocalStorage()]
 }

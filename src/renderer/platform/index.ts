@@ -3,8 +3,7 @@ import DesktopPlatform from './desktop_platform'
 import type { Platform } from './interfaces'
 import TestPlatform from './test_platform'
 import WebPlatform from './web_platform'
-import { MobileSQLiteStorage } from './storages'
-import type { Storage } from './interfaces'
+import { IndexedDBStorage } from './storages'
 import WebExporter from './web_exporter'
 import webLogger from './web_logger'
 import { IndexedDBImageGenerationStorage, type ImageGenerationStorage } from '@/storage/ImageGenerationStorage'
@@ -16,14 +15,15 @@ import localforage from 'localforage'
 import { parseTextFileLocally } from './web_platform_utils'
 import type { KnowledgeBaseController } from './knowledge-base/interface'
 
-// 移动端平台实现 - 使用 SQLite 存储
-class MobilePlatform extends MobileSQLiteStorage implements Platform {
+// 移动端平台实现 - 使用 IndexedDB 存储（更可靠）
+class MobilePlatform extends IndexedDBStorage implements Platform {
   public type: 'mobile' = 'mobile'
   public exporter = new WebExporter()
   private imageGenerationStorage: ImageGenerationStorage | null = null
 
   constructor() {
     super()
+    console.log('[MobilePlatform] Initializing with IndexedDB storage')
     webLogger.init().catch((e) => console.error('Failed to init web logger:', e))
   }
 
@@ -236,6 +236,7 @@ function initPlatform(): Platform {
   
   // 移动端检测
   if (CHATBOX_BUILD_TARGET === 'mobile_app') {
+    console.log('[Platform] Creating MobilePlatform for mobile_app target')
     return new MobilePlatform()
   }
   
